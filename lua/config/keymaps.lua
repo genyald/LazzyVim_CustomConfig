@@ -118,15 +118,6 @@ map("n", "<leader>cm", "<cmd>Telescope git_commits<CR>", { desc = "telescope git
 map("n", "<leader>gt", "<cmd>Telescope git_status<CR>", { desc = "telescope git status" })
 map("n", "<leader>pt", "<cmd>Telescope terms<CR>", { desc = "telescope pick hidden term" })
 
-map("n", "<leader>th", function()
-  local ok, themes = pcall(require, "nvchad.themes")
-  if ok and themes.open then
-    themes.open()
-  else
-    vim.notify("nvchad.themes no disponible", vim.log.levels.WARN)
-  end
-end, { desc = "telescope nvchad themes" })
-
 map("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "telescope find files" })
 map(
   "n",
@@ -165,78 +156,6 @@ end, { desc = "DAP: Breakpoint condicional" })
 map("n", "<C-S-e>", function()
   require("dapui").eval()
 end, { desc = "DAP: Evaluar expresión" })
-
--- ====================
--- Terminal mappings
--- ====================
--- escape terminal mode
-map("t", "<C-x>", "<C-\\><C-N>", { desc = "terminal escape terminal mode" })
-
--- Helper: toggle a simple terminal split / vsplit / tab (fallback no dependencias)
-local function toggle_term(pos)
-  -- si estamos en terminal, cerrar ventana actual
-  if vim.bo.buftype == "terminal" then
-    vim.cmd("close")
-    return
-  end
-
-  if pos == "sp" then
-    vim.cmd("split | terminal")
-  elseif pos == "vsp" then
-    vim.cmd("vsplit | terminal")
-  elseif pos == "float" then
-    -- fallback: abrir terminal en nueva tab como "flotante" alternativo
-    vim.cmd("tabnew | terminal")
-  else
-    vim.cmd("terminal")
-  end
-end
-
-map("n", "<leader>h", function()
-  -- nuevo terminal horizontal (fallback)
-  local ok, term_mod = pcall(require, "nvchad.term")
-  if ok and term_mod.new then
-    term_mod.new({ pos = "sp" })
-  else
-    toggle_term("sp")
-  end
-end, { desc = "terminal new horizontal term" })
-
-map("n", "<leader>v", function()
-  local ok, term_mod = pcall(require, "nvchad.term")
-  if ok and term_mod.new then
-    term_mod.new({ pos = "vsp" })
-  else
-    toggle_term("vsp")
-  end
-end, { desc = "terminal new vertical term" })
-
-map({ "n", "t" }, "<A-v>", function()
-  local ok, term_mod = pcall(require, "nvchad.term")
-  if ok and term_mod.toggle then
-    term_mod.toggle({ pos = "vsp", id = "vtoggleTerm" })
-  else
-    toggle_term("vsp")
-  end
-end, { desc = "terminal toggleable vertical term" })
-
-map({ "n", "t" }, "<A-h>", function()
-  local ok, term_mod = pcall(require, "nvchad.term")
-  if ok and term_mod.toggle then
-    term_mod.toggle({ pos = "sp", id = "htoggleTerm" })
-  else
-    toggle_term("sp")
-  end
-end, { desc = "terminal toggleable horizontal term" })
-
-map({ "n", "t" }, "<A-i>", function()
-  local ok, term_mod = pcall(require, "nvchad.term")
-  if ok and term_mod.toggle then
-    term_mod.toggle({ pos = "float", id = "floatTerm" })
-  else
-    toggle_term("float")
-  end
-end, { desc = "terminal toggle floating term" })
 
 -- ====================
 -- WhichKey helpers
@@ -302,5 +221,25 @@ vim.api.nvim_create_autocmd("InsertEnter", {
   end,
 })
 
+vim.keymap.set("t", "<Esc>", function()
+  local bufname = vim.api.nvim_buf_get_name(0)
+
+  -- Verifica si es un buffer de toggleterm
+  if bufname:match("toggleterm") then
+    local winid = vim.api.nvim_get_current_win()
+    local config = vim.api.nvim_win_get_config(winid)
+
+    -- Si es flotante (config.relative ~= "")
+    if config.relative ~= "" then
+      -- Salir de terminal mode y cerrar
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-\\><C-n>", true, false, true), "n", false)
+      vim.cmd("ToggleTerm")
+      return
+    end
+  end
+
+  -- Si no es toggleterm flotante → solo salir de terminal mode
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-\\><C-n>", true, false, true), "n", false)
+end, { noremap = true, silent = true })
 -- End of file
 --
