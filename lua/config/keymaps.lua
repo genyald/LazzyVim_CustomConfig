@@ -7,13 +7,6 @@
 -- Implementa fallbacks seguros si las utilidades NVChad no están instaladas.
 
 local map = vim.keymap.set
-local function safe_require(name)
-  local ok, m = pcall(require, name)
-  if ok then
-    return m
-  end
-  return nil
-end
 
 -- ====================
 -- Insert mode nav (NVChad)
@@ -26,76 +19,11 @@ map("i", "<C-j>", "<Down>", { desc = "move down" })
 map("i", "<C-k>", "<Up>", { desc = "move up" })
 
 -- ====================
--- Window switching (NVChad)
--- ====================
-map("n", "<C-h>", "<C-w>h", { desc = "switch window left", remap = true })
-map("n", "<C-l>", "<C-w>l", { desc = "switch window right", remap = true })
-map("n", "<C-j>", "<C-w>j", { desc = "switch window down", remap = true })
-map("n", "<C-k>", "<C-w>k", { desc = "switch window up", remap = true })
-
--- ====================
 -- Misc general
 -- ====================
 map("n", "<Esc>", "<cmd>noh<CR>", { desc = "general clear highlights" })
 map({ "i", "x", "n", "s" }, "<C-s>", "<cmd>w<cr><esc>", { desc = "general save file" })
 map("n", "<C-c>", "<cmd>%y+<CR>", { desc = "general copy whole file" })
-
--- ====================
--- Line numbers / Cheatsheet
--- ====================
-map("n", "<leader>n", "<cmd>set nu!<CR>", { desc = "toggle line number" })
-map("n", "<leader>rn", "<cmd>set rnu!<CR>", { desc = "toggle relative number" })
-
-map("n", "<leader>ch", function()
-  if vim.fn.exists(":NvCheatsheet") == 2 then
-    vim.cmd("NvCheatsheet")
-  else
-    vim.notify("NvCheatsheet no disponible", vim.log.levels.WARN)
-  end
-end, { desc = "toggle nvcheatsheet" })
-
--- ====================
--- Format (conform fallback a LazyVim.format)
--- ====================
-map({ "n", "x" }, "<leader>fm", function()
-  local conform = safe_require("conform")
-  if conform and conform.format then
-    conform.format({ lsp_fallback = true })
-    return
-  end
-  if LazyVim and LazyVim.format then
-    LazyVim.format({ force = true })
-    return
-  end
-  vim.notify("No hay formatter configurado (conform / LazyVim.format)", vim.log.levels.WARN)
-end, { desc = "general format file" })
-
--- ====================
--- LSP / diagnostics
--- ====================
-map("n", "<leader>ds", vim.diagnostic.setloclist, { desc = "LSP diagnostic loclist" })
-
--- ====================
--- Buffers / tabufline equivalents
--- ====================
-map("n", "<leader>b", "<cmd>enew<CR>", { desc = "buffer new" })
-map("n", "<tab>", "<cmd>bnext<cr>", { desc = "buffer goto next" })
-map("n", "<S-tab>", "<cmd>bprevious<cr>", { desc = "buffer goto prev" })
-map("n", "<leader>x", function()
-  -- prefer Snacks.bufdelete if existe, si no usar :bd
-  local Snacks = safe_require("snacks")
-  if Snacks and Snacks.bufdelete then
-    Snacks.bufdelete()
-  else
-    vim.cmd("bd")
-  end
-end, { desc = "buffer close" })
-
--- ====================
--- Comment (uses normal/visual remarking plugins via 'gcc'/'gc')
--- ====================
-map("n", "<leader>/", "gcc", { desc = "toggle comment", remap = true })
-map("v", "<leader>/", "gc", { desc = "toggle comment", remap = true })
 
 -- ====================
 -- NvimTree
@@ -171,17 +99,6 @@ end, { desc = "whichkey query lookup" })
 -- Keep existing LazyVim buffer nav but add NVChad-like bindings
 map("n", "<leader>fn", "<cmd>enew<cr>", { desc = "New File" })
 map("n", "<leader>qq", "<cmd>qa<cr>", { desc = "Quit All" })
-
--- ====================
--- Diagnostic navigation (NVChad style already present in LazyVim defaults)
--- ====================
-map("n", "<leader>cd", vim.diagnostic.open_float, { desc = "Line Diagnostics" })
-map("n", "]d", function()
-  vim.diagnostic.goto_next()
-end, { desc = "Next Diagnostic" })
-map("n", "[d", function()
-  vim.diagnostic.goto_prev()
-end, { desc = "Prev Diagnostic" })
 
 -- ====================
 -- Small niceties from NVChad
