@@ -1,0 +1,306 @@
+-- Keymaps are automatically loaded on the VeryLazy event
+-- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
+-- Add any additional keymaps here
+--
+--
+-- Equivalentes a los mappings por defecto de NVChad para LazyVim
+-- Implementa fallbacks seguros si las utilidades NVChad no están instaladas.
+
+local map = vim.keymap.set
+local function safe_require(name)
+  local ok, m = pcall(require, name)
+  if ok then
+    return m
+  end
+  return nil
+end
+
+-- ====================
+-- Insert mode nav (NVChad)
+-- ====================
+map("i", "<C-b>", "<ESC>^i", { desc = "move beginning of line" })
+map("i", "<C-e>", "<End>", { desc = "move end of line" })
+map("i", "<C-h>", "<Left>", { desc = "move left" })
+map("i", "<C-l>", "<Right>", { desc = "move right" })
+map("i", "<C-j>", "<Down>", { desc = "move down" })
+map("i", "<C-k>", "<Up>", { desc = "move up" })
+
+-- ====================
+-- Window switching (NVChad)
+-- ====================
+map("n", "<C-h>", "<C-w>h", { desc = "switch window left", remap = true })
+map("n", "<C-l>", "<C-w>l", { desc = "switch window right", remap = true })
+map("n", "<C-j>", "<C-w>j", { desc = "switch window down", remap = true })
+map("n", "<C-k>", "<C-w>k", { desc = "switch window up", remap = true })
+
+-- ====================
+-- Misc general
+-- ====================
+map("n", "<Esc>", "<cmd>noh<CR>", { desc = "general clear highlights" })
+map({ "i", "x", "n", "s" }, "<C-s>", "<cmd>w<cr><esc>", { desc = "general save file" })
+map("n", "<C-c>", "<cmd>%y+<CR>", { desc = "general copy whole file" })
+
+-- ====================
+-- Line numbers / Cheatsheet
+-- ====================
+map("n", "<leader>n", "<cmd>set nu!<CR>", { desc = "toggle line number" })
+map("n", "<leader>rn", "<cmd>set rnu!<CR>", { desc = "toggle relative number" })
+
+map("n", "<leader>ch", function()
+  if vim.fn.exists(":NvCheatsheet") == 2 then
+    vim.cmd("NvCheatsheet")
+  else
+    vim.notify("NvCheatsheet no disponible", vim.log.levels.WARN)
+  end
+end, { desc = "toggle nvcheatsheet" })
+
+-- ====================
+-- Format (conform fallback a LazyVim.format)
+-- ====================
+map({ "n", "x" }, "<leader>fm", function()
+  local conform = safe_require("conform")
+  if conform and conform.format then
+    conform.format({ lsp_fallback = true })
+    return
+  end
+  if LazyVim and LazyVim.format then
+    LazyVim.format({ force = true })
+    return
+  end
+  vim.notify("No hay formatter configurado (conform / LazyVim.format)", vim.log.levels.WARN)
+end, { desc = "general format file" })
+
+-- ====================
+-- LSP / diagnostics
+-- ====================
+map("n", "<leader>ds", vim.diagnostic.setloclist, { desc = "LSP diagnostic loclist" })
+
+-- ====================
+-- Buffers / tabufline equivalents
+-- ====================
+map("n", "<leader>b", "<cmd>enew<CR>", { desc = "buffer new" })
+map("n", "<tab>", "<cmd>bnext<cr>", { desc = "buffer goto next" })
+map("n", "<S-tab>", "<cmd>bprevious<cr>", { desc = "buffer goto prev" })
+map("n", "<leader>x", function()
+  -- prefer Snacks.bufdelete if existe, si no usar :bd
+  local Snacks = safe_require("snacks")
+  if Snacks and Snacks.bufdelete then
+    Snacks.bufdelete()
+  else
+    vim.cmd("bd")
+  end
+end, { desc = "buffer close" })
+
+-- ====================
+-- Comment (uses normal/visual remarking plugins via 'gcc'/'gc')
+-- ====================
+map("n", "<leader>/", "gcc", { desc = "toggle comment", remap = true })
+map("v", "<leader>/", "gc", { desc = "toggle comment", remap = true })
+
+-- ====================
+-- NvimTree
+-- ====================
+-- map("n", "<C-n>", "<cmd>NvimTreeToggle<CR>", { desc = "nvimtree toggle window" })
+-- map("n", "<leader>e", "<cmd>NvimTreeFocus<CR>", { desc = "nvimtree focus window" })
+map("n", "<C-n>", "<cmd>Neotree toggle<CR>", { desc = "neo-tree toggle window" })
+map("n", "<leader>e", "<cmd>Neotree reveal<CR>", { desc = "neo-tree reveal current file / focus" })
+
+-- ====================
+-- Telescope
+-- ====================
+map("n", "<leader>fw", "<cmd>Telescope live_grep<CR>", { desc = "telescope live grep" })
+map("n", "<leader>fb", "<cmd>Telescope buffers<CR>", { desc = "telescope find buffers" })
+map("n", "<leader>fh", "<cmd>Telescope help_tags<CR>", { desc = "telescope help page" })
+map("n", "<leader>ma", "<cmd>Telescope marks<CR>", { desc = "telescope find marks" })
+map("n", "<leader>fo", "<cmd>Telescope oldfiles<CR>", { desc = "telescope find oldfiles" })
+map("n", "<leader>fz", "<cmd>Telescope current_buffer_fuzzy_find<CR>", { desc = "telescope find in current buffer" })
+map("n", "<leader>cm", "<cmd>Telescope git_commits<CR>", { desc = "telescope git commits" })
+map("n", "<leader>gt", "<cmd>Telescope git_status<CR>", { desc = "telescope git status" })
+map("n", "<leader>pt", "<cmd>Telescope terms<CR>", { desc = "telescope pick hidden term" })
+
+map("n", "<leader>th", function()
+  local ok, themes = pcall(require, "nvchad.themes")
+  if ok and themes.open then
+    themes.open()
+  else
+    vim.notify("nvchad.themes no disponible", vim.log.levels.WARN)
+  end
+end, { desc = "telescope nvchad themes" })
+
+map("n", "<leader>ff", "<cmd>Telescope find_files<cr>", { desc = "telescope find files" })
+map(
+  "n",
+  "<leader>fa",
+  "<cmd>Telescope find_files follow=true no_ignore=true hidden=true<CR>",
+  { desc = "telescope find all files" }
+)
+
+-- Depuración estilo VSCode
+map("n", "<F5>", function()
+  require("dap").continue()
+end, { desc = "DAP: Iniciar / Continuar" })
+map("n", "<F10>", function()
+  require("dap").step_over()
+end, { desc = "DAP: Step Over" })
+map("n", "<F11>", function()
+  require("dap").step_into()
+end, { desc = "DAP: Step Into" })
+map("n", "<S-F11>", function()
+  require("dap").step_out()
+end, { desc = "DAP: Step Out" })
+map("n", "<S-F5>", function()
+  require("dap").terminate()
+end, { desc = "DAP: Detener" })
+map("n", "<C-S-F5>", function()
+  require("dap").restart()
+end, { desc = "DAP: Reiniciar" })
+
+map("n", "<F9>", function()
+  require("dap").toggle_breakpoint()
+end, { desc = "DAP: Alternar Breakpoint" })
+map("n", "<C-F9>", function()
+  require("dap").set_breakpoint(vim.fn.input("Condición: "))
+end, { desc = "DAP: Breakpoint condicional" })
+
+map("n", "<C-S-e>", function()
+  require("dapui").eval()
+end, { desc = "DAP: Evaluar expresión" })
+
+-- ====================
+-- Terminal mappings
+-- ====================
+-- escape terminal mode
+map("t", "<C-x>", "<C-\\><C-N>", { desc = "terminal escape terminal mode" })
+
+-- Helper: toggle a simple terminal split / vsplit / tab (fallback no dependencias)
+local function toggle_term(pos)
+  -- si estamos en terminal, cerrar ventana actual
+  if vim.bo.buftype == "terminal" then
+    vim.cmd("close")
+    return
+  end
+
+  if pos == "sp" then
+    vim.cmd("split | terminal")
+  elseif pos == "vsp" then
+    vim.cmd("vsplit | terminal")
+  elseif pos == "float" then
+    -- fallback: abrir terminal en nueva tab como "flotante" alternativo
+    vim.cmd("tabnew | terminal")
+  else
+    vim.cmd("terminal")
+  end
+end
+
+map("n", "<leader>h", function()
+  -- nuevo terminal horizontal (fallback)
+  local ok, term_mod = pcall(require, "nvchad.term")
+  if ok and term_mod.new then
+    term_mod.new({ pos = "sp" })
+  else
+    toggle_term("sp")
+  end
+end, { desc = "terminal new horizontal term" })
+
+map("n", "<leader>v", function()
+  local ok, term_mod = pcall(require, "nvchad.term")
+  if ok and term_mod.new then
+    term_mod.new({ pos = "vsp" })
+  else
+    toggle_term("vsp")
+  end
+end, { desc = "terminal new vertical term" })
+
+map({ "n", "t" }, "<A-v>", function()
+  local ok, term_mod = pcall(require, "nvchad.term")
+  if ok and term_mod.toggle then
+    term_mod.toggle({ pos = "vsp", id = "vtoggleTerm" })
+  else
+    toggle_term("vsp")
+  end
+end, { desc = "terminal toggleable vertical term" })
+
+map({ "n", "t" }, "<A-h>", function()
+  local ok, term_mod = pcall(require, "nvchad.term")
+  if ok and term_mod.toggle then
+    term_mod.toggle({ pos = "sp", id = "htoggleTerm" })
+  else
+    toggle_term("sp")
+  end
+end, { desc = "terminal toggleable horizontal term" })
+
+map({ "n", "t" }, "<A-i>", function()
+  local ok, term_mod = pcall(require, "nvchad.term")
+  if ok and term_mod.toggle then
+    term_mod.toggle({ pos = "float", id = "floatTerm" })
+  else
+    toggle_term("float")
+  end
+end, { desc = "terminal toggle floating term" })
+
+-- ====================
+-- WhichKey helpers
+-- ====================
+map("n", "<leader>wK", "<cmd>WhichKey <CR>", { desc = "whichkey all keymaps" })
+map("n", "<leader>wk", function()
+  vim.cmd("WhichKey " .. vim.fn.input("WhichKey: "))
+end, { desc = "whichkey query lookup" })
+
+-- ====================
+-- Tab / quick buffer helpers used in NVChad
+-- ====================
+-- Keep existing LazyVim buffer nav but add NVChad-like bindings
+map("n", "<leader>fn", "<cmd>enew<cr>", { desc = "New File" })
+map("n", "<leader>qq", "<cmd>qa<cr>", { desc = "Quit All" })
+
+-- ====================
+-- Diagnostic navigation (NVChad style already present in LazyVim defaults)
+-- ====================
+map("n", "<leader>cd", vim.diagnostic.open_float, { desc = "Line Diagnostics" })
+map("n", "]d", function()
+  vim.diagnostic.goto_next()
+end, { desc = "Next Diagnostic" })
+map("n", "[d", function()
+  vim.diagnostic.goto_prev()
+end, { desc = "Prev Diagnostic" })
+
+-- ====================
+-- Small niceties from NVChad
+-- ====================
+map("n", "<leader>/", "gcc", { desc = "toggle comment", remap = true }) -- re-apply (harmless)
+map("n", "<leader>b", "<cmd>enew<CR>", { desc = "buffer new (nvchad equiv)" })
+
+-- Forzar Ctrl-k en modo insert al estilo NVChad, anulando mappings buffer-local de blink.cmp u otros.
+local function set_insert_ctrl_k(buf)
+  -- intenta eliminar cualquier mapping 'i' tanto global como buffer-local
+  pcall(vim.keymap.del, "i", "<C-k>") -- global
+  pcall(vim.keymap.del, "i", "<C-k>", { buffer = buf }) -- buffer-local
+
+  -- reasignar buffer-localmente el comportamiento NVChad
+  local ok, err = pcall(function()
+    vim.keymap.set("i", "<C-k>", "<C-O>k", {
+      desc = "move up (insert mode) - NVChad override",
+      remap = true,
+      buffer = buf,
+    })
+  end)
+  if not ok then
+    vim.notify("Error al setear <C-k> buffer-local: " .. tostring(err), vim.log.levels.WARN)
+  end
+end
+
+-- Intenta fijar el mapping ahora para el buffer actual (por si ya estás dentro)
+pcall(function()
+  set_insert_ctrl_k(0)
+end)
+
+-- Reaplica cuando entran en modo Insert (por si el plugin asigna en InsertEnter)
+vim.api.nvim_create_autocmd("InsertEnter", {
+  callback = function()
+    local bufnr = vim.api.nvim_get_current_buf()
+    set_insert_ctrl_k(bufnr)
+  end,
+})
+
+-- End of file
+--
